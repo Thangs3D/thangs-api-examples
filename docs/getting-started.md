@@ -6,12 +6,12 @@ We will need a name for your application. When a user authorizes your applicatio
 
 We then provide you with an API key to use for your requests to the Thangs API. Tell us which parts of the API you plan to use, because a key is granted access area by area:
 
-| Access area              | What it unlocks                                                  |
-| :----------------------- | :--------------------------------------------------------------- |
-| Delegated auth           | Authorizing users and reading their memberships                  |
-| Plans                    | Listing your plans                                               |
-| Model management (read)  | Reading your models, parts, attachments, licenses and categories |
-| Model management (write) | Creating, updating and deleting models, parts and attachments    |
+| Access area              | What it unlocks                                                      |
+| :----------------------- | :------------------------------------------------------------------- |
+| Delegated auth           | Authorizing users and reading their memberships and preorder rewards |
+| Plans                    | Listing your plans, and looking up preorder rewards by OAuth `sub`   |
+| Model management (read)  | Reading your models, parts, attachments, licenses and categories     |
+| Model management (write) | Creating, updating and deleting models, parts and attachments        |
 
 The distinction between the areas may also require changes to our revenue agreement, or may only be provided to users at a certain sales volume.
 
