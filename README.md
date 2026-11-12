@@ -11,7 +11,7 @@ The guide and the samples are versioned together. Release tags match the guide v
 
 ## Development
 
-Requires Node.js 22 or later.
+Requires Node.js 26 or later.
 
 ```bash
 npm install
