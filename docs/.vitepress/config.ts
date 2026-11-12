@@ -26,6 +26,7 @@ export default defineConfig({
             link: "/plans-and-memberships",
           },
           { text: "Model management", link: "/model-management" },
+          { text: "Preorder rewards", link: "/preorder-rewards" },
         ],
       },
     ],
