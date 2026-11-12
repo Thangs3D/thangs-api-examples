@@ -32,7 +32,7 @@ Example success response:
 { "categories": ["3D Printing", "Art", "Design"] }
 ```
 
-A `GET` request to `/public/licenses` returns the licenses configured on your Thangs account. Each license's `id` is a valid value for a model's `license` field.
+A `GET` request to `/public/licenses` returns the licenses configured on your Thangs account. Each license's `id` is a valid value for a model's `license` field. To use a license of your own, [upload it](#licenses) first.
 
 |                    |                                                                             |
 | :----------------- | :-------------------------------------------------------------------------- |
@@ -211,13 +211,13 @@ A `DELETE` request to `/public/models/{modelId}` removes the model from Thangs.
 
 ## Parts
 
-Parts are the 3D files that make up a model, and each part belongs to exactly one model. Adding a part is a two-step exchange: first you ask Thangs for a signed upload URL and upload the file's bytes to it, then you attach the uploaded file to the model by its `gcsPath`.
+Parts are the 3D files that make up a model, and each part belongs to exactly one model. Adding a part is a two-step exchange: first you ask Thangs for a signed upload URL and upload the file's bytes to it, then you attach the uploaded file to the model by its `uploadUrl`.
 
 Each time you change a model's parts, Thangs creates a new version of the model. [Set the parts for a model](#set-the-parts-for-a-model) explains what that means for you.
 
 ### Request upload URLs for model parts
 
-Make a `POST` request to `/public/models/upload-urls` describing each file you are about to upload. Thangs returns one signed URL per file, in the same order as your request. The URLs point at Google Cloud Storage (`storage.googleapis.com`); see [Uploading files to signed URLs](#uploading-files-to-signed-urls) for how to send the bytes. Each grant also returns a `gcsPath`, which you pass as `uploadedFrom` when you set the model's parts.
+Make a `POST` request to `/public/models/upload-urls` describing each file you are about to upload. Thangs returns one signed URL per file, in the same order as your request. The URLs point at Google Cloud Storage (`storage.googleapis.com`); see [Uploading files to signed URLs](#uploading-files-to-signed-urls) for how to send the bytes. Once a file is uploaded, you pass its grant's `uploadUrl` as `uploadedFrom` when you set the model's parts. Each grant also returns a `gcsPath`, which is for information only: do not send it as `uploadedFrom`.
 
 |                    |                                                                                                                                                                                                                                                                                                                                                              |
 | :----------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -273,15 +273,15 @@ Any existing part you leave out of the request is removed from the model. At mos
 
 Every `PUT` to this endpoint creates a new version of the model, saving its current state as a new downloadable zip file. If your model has several part files, send them all in one request. If the model is already public, splitting them across requests produces downloadable zips with an incomplete set of parts until the processing of parts in the final `PUT` completes.
 
-|                    |                                                                                                                                                                                                                                                                                                                                                                                     |
-| :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Endpoint           | `PUT /public/models/{modelId}/parts`                                                                                                                                                                                                                                                                                                                                                |
-| Path parameters    | `modelId` (number, required): the model's ID.                                                                                                                                                                                                                                                                                                                                       |
-| Request body       | A JSON object with a `parts` array of up to 50 entries. Each entry has: `partIdentifier` (string, optional), the identifier of an existing part on this model; `uploadedFrom` (string, optional), the `gcsPath` from a part upload grant; `name` (string, required, max 255), the part's display name; `primary` (boolean, optional), `true` to make this the model's primary part. |
-| Response (success) | `200 OK` with a JSON body containing the resulting `parts` array of Part objects.                                                                                                                                                                                                                                                                                                   |
-| Response (error)   | `400 Bad Request` if the request body is invalid, if an entry has neither `partIdentifier` nor `uploadedFrom`, if more than one entry is marked primary, or if an `uploadedFrom` does not reference a successful upload.                                                                                                                                                            |
-| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                                                                                                                                                                                                                                                                       |
-| Response (error)   | `404 Not Found` if the `modelId` does not exist.                                                                                                                                                                                                                                                                                                                                    |
+|                    |                                                                                                                                                                                                                                                                                                                                                                                       |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Endpoint           | `PUT /public/models/{modelId}/parts`                                                                                                                                                                                                                                                                                                                                                  |
+| Path parameters    | `modelId` (number, required): the model's ID.                                                                                                                                                                                                                                                                                                                                         |
+| Request body       | A JSON object with a `parts` array of up to 50 entries. Each entry has: `partIdentifier` (string, optional), the identifier of an existing part on this model; `uploadedFrom` (string, optional), the `uploadUrl` from a part upload grant; `name` (string, required, max 255), the part's display name; `primary` (boolean, optional), `true` to make this the model's primary part. |
+| Response (success) | `200 OK` with a JSON body containing the resulting `parts` array of Part objects.                                                                                                                                                                                                                                                                                                     |
+| Response (error)   | `400 Bad Request` if the request body is invalid, if an entry has neither `partIdentifier` nor `uploadedFrom`, if more than one entry is marked primary, or if an `uploadedFrom` does not reference a successful upload.                                                                                                                                                              |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                                                                                                                                                                                                                                                                         |
+| Response (error)   | `404 Not Found` if the `modelId` does not exist.                                                                                                                                                                                                                                                                                                                                      |
 
 Example request body:
 
@@ -294,7 +294,7 @@ Example request body:
       "primary": true
     },
     {
-      "uploadedFrom": "...path-2...",
+      "uploadedFrom": "https://storage.googleapis.com/...signed-2...",
       "name": "Support Strut"
     }
   ]
@@ -346,7 +346,7 @@ Example success response:
 
 ## Attachments
 
-Attachments are the images shown with a model; only images are supported. Each attachment belongs to exactly one model and has a display order. Adding one follows the same two-step exchange as parts: request a signed upload URL, upload the image, then attach it to the model by its `gcsPath`.
+Attachments are the images shown with a model; only images are supported. Each attachment belongs to exactly one model and has a display order. Adding one follows the same two-step exchange as parts: request a signed upload URL, upload the image, then attach it to the model by its `uploadUrl`.
 
 ### Request upload URLs for attachments
 
@@ -399,15 +399,15 @@ Once your images are uploaded, make a `PUT` request to `/public/models/{modelId}
 
 Give every new image an `imageType`. If you leave it out, Thangs uses the type it detects, but the field will become required. For existing images, an omitted or `null` `imageType` keeps the stored type, so you can send back the entries from [List attachments](#list-attachments-on-a-model) as they are.
 
-|                    |                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| :----------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Endpoint           | `PUT /public/models/{modelId}/attachments`                                                                                                                                                                                                                                                                                                                                                                                        |
-| Path parameters    | `modelId` (number, required): the model's ID.                                                                                                                                                                                                                                                                                                                                                                                     |
-| Request body       | A JSON object with an `attachments` array of up to 50 entries. A new image has `uploadedFrom` (string, required), the `gcsPath` from an attachment upload grant. An existing image has `id` (integer, required), its attachment ID. Either may also have `order` (integer, optional, minimum 0), its display position, defaulting to its position in the array, and `imageType` (string, optional), one of the image types below. |
-| Response (success) | `200 OK` with a JSON body containing the resulting `attachments` array of Attachment objects.                                                                                                                                                                                                                                                                                                                                     |
-| Response (error)   | `400 Bad Request` if the request body is invalid, or if an `uploadedFrom` does not reference a successful upload.                                                                                                                                                                                                                                                                                                                 |
-| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                                                                                                                                                                                                                                                                                                                     |
-| Response (error)   | `404 Not Found` if the `modelId` does not exist.                                                                                                                                                                                                                                                                                                                                                                                  |
+|                    |                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `PUT /public/models/{modelId}/attachments`                                                                                                                                                                                                                                                                                                                                                                                          |
+| Path parameters    | `modelId` (number, required): the model's ID.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Request body       | A JSON object with an `attachments` array of up to 50 entries. A new image has `uploadedFrom` (string, required), the `uploadUrl` from an attachment upload grant. An existing image has `id` (integer, required), its attachment ID. Either may also have `order` (integer, optional, minimum 0), its display position, defaulting to its position in the array, and `imageType` (string, optional), one of the image types below. |
+| Response (success) | `200 OK` with a JSON body containing the resulting `attachments` array of Attachment objects.                                                                                                                                                                                                                                                                                                                                       |
+| Response (error)   | `400 Bad Request` if the request body is invalid, or if an `uploadedFrom` does not reference a successful upload.                                                                                                                                                                                                                                                                                                                   |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Response (error)   | `404 Not Found` if the `modelId` does not exist.                                                                                                                                                                                                                                                                                                                                                                                    |
 
 Example request body:
 
@@ -415,7 +415,11 @@ Example request body:
 {
   "attachments": [
     { "id": 12345, "order": 1 },
-    { "uploadedFrom": "...path-2...", "order": 0, "imageType": "render" }
+    {
+      "uploadedFrom": "https://storage.googleapis.com/...signed-2...",
+      "order": 0,
+      "imageType": "render"
+    }
   ]
 }
 ```
@@ -465,9 +469,85 @@ Example success response:
 }
 ```
 
+## Licenses
+
+Besides the licenses already on your Thangs account, you can upload your own license file and apply it to your models. Adding a license takes the same two steps as a part: request a signed upload URL, upload the file, then add it by its `uploadUrl`.
+
+### Request upload URLs for licenses
+
+Make a `POST` request to `/public/licenses/upload-urls` describing each license file you are about to upload. A license file must be a PDF (`.pdf`), plain text (`.txt`) or Markdown (`.md`) file, and file names must be unique within the request, ignoring case.
+
+|                    |                                                                                                                                                                                                                                                                                                                             |
+| :----------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `POST /public/licenses/upload-urls`                                                                                                                                                                                                                                                                                         |
+| Request body       | A JSON object with a `files` array of 1 to 10 entries, each describing one file: `filename` (string, required), the original file name including its extension; `sizeBytes` (integer, minimum 1), the file's size in bytes.                                                                                                 |
+| Response (success) | `200 OK` with a JSON body containing a `grants` array, one entry per requested file in request order. Each entry has `uploadUrl`, `gcsPath`, `contentType` and `expiresAt` (all strings). `contentType` is `application/pdf`, `text/plain` or `text/markdown`, and must be sent as the `Content-Type` header of the upload. |
+| Response (error)   | `400 Bad Request` if the request body is invalid, if a file is not a `.pdf`, `.txt` or `.md` file, or if two files have the same name.                                                                                                                                                                                      |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                                                                                                                                                                                                               |
+| Response (error)   | `413 Payload Too Large` if any declared `sizeBytes` exceeds 50 MB.                                                                                                                                                                                                                                                          |
+
+Example request body:
+
+```json
+{
+  "files": [{ "filename": "my-license.pdf", "sizeBytes": 204800 }]
+}
+```
+
+Upload the file to the `uploadUrl` as described in [Uploading files to signed URLs](#uploading-files-to-signed-urls).
+
+### Add a license
+
+Once the file is uploaded, make a `POST` request to `/public/licenses` with the grant's `uploadUrl` as `uploadedFrom`. Each upload URL can be used for one license only.
+
+The response is a License object. Set its `id` as the `license` field when you [update a model](#update-an-existing-model) to apply the license to it. The new license also appears in `GET /public/licenses`.
+
+|                    |                                                                                                                                            |
+| :----------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `POST /public/licenses`                                                                                                                    |
+| Request body       | A JSON object with `uploadedFrom` (string, required): the `uploadUrl` of a license upload grant.                                           |
+| Response (success) | `201 Created` with a JSON body containing a License object.                                                                                |
+| Response (error)   | `400 Bad Request` if the URL is unknown or expired, is not a license upload, has already been used, or if the file was not uploaded to it. |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                              |
+
+Example request body:
+
+```json
+{ "uploadedFrom": "https://storage.googleapis.com/...signed..." }
+```
+
+Example success response:
+
+```json
+{ "id": 42, "name": "my-license.pdf", "url": "..." }
+```
+
+### Delete a license
+
+Make a `DELETE` request to `/public/licenses/{licenseId}` to remove one of your licenses. You cannot delete a license that a model still uses: the `409` response lists those models in `modelIds`, so set another license, or `null`, as `license` on each of them first.
+
+|                    |                                                                                                                  |
+| :----------------- | :--------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `DELETE /public/licenses/{licenseId}`                                                                            |
+| Path parameters    | `licenseId` (number, required): the license's `id`.                                                              |
+| Request body       | None.                                                                                                            |
+| Response (success) | `204 No Content`.                                                                                                |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                    |
+| Response (error)   | `404 Not Found` if the license does not exist or is not yours.                                                   |
+| Response (error)   | `409 Conflict` if a model uses the license. The body has `message` (string) and `modelIds` (array of model IDs). |
+
+Example conflict response:
+
+```json
+{
+  "message": "License 42 is used by 2 model(s). Remove it from them first.",
+  "modelIds": [101, 102]
+}
+```
+
 ## Uploading files to signed URLs
 
-The upload URLs returned for parts and attachments point at Google Cloud Storage (`storage.googleapis.com`). Your service is responsible for sending each file's bytes to its URL before the URL expires. Once the upload succeeds, pass the grant's `gcsPath` as `uploadedFrom` when you set the model's parts or attachments.
+The upload URLs returned for parts, attachments and licenses point at Google Cloud Storage (`storage.googleapis.com`). Your service is responsible for sending each file's bytes to its URL before the URL expires. Once the upload succeeds, pass the grant's `uploadUrl` as `uploadedFrom` when you set the model's parts or attachments, or add a license.
 
 ### Performing the upload
 
@@ -492,7 +572,7 @@ Content-Type: application/octet-stream
 
 ### Successful upload
 
-A `2xx` response from `storage.googleapis.com` (typically `200 OK`) means the upload succeeded. You can now use the grant's `gcsPath` as `uploadedFrom`.
+A `2xx` response from `storage.googleapis.com` (typically `200 OK`) means the upload succeeded. You can now use the grant's `uploadUrl` as `uploadedFrom`.
 
 ### Retrying failed uploads
 
