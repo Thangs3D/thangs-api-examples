@@ -1,13 +1,13 @@
 # Preorder rewards
 
-If you run preorder campaigns on Thangs, some rewards may include a feature that you provide yourself, outside Thangs or in your own application: a Discord role, a name in the credits, an unlock in your app. Thangs does not deliver these features. Use these endpoints to find out which of your backers are owed one, and when they should have it.
+If you run preorder campaigns on Thangs, some rewards may include a feature that you provide yourself, outside Thangs or in your own application, such as access or an unlock in your app. Thangs does not deliver these features. Use these endpoints to find out which of your backers are owed one, and when they should have it.
 
 There are two ways to look a user up:
 
 - [With a user token](#get-a-user-s-preorder-rewards), after the user authorizes your application as described in [Plans and user memberships](./plans-and-memberships.md).
 - [With an OAuth `sub`](#look-up-preorder-rewards-by-oauth-sub), one user at a time or [in batches](#look-up-preorder-rewards-for-many-subs) of up to 100.
 
-Every lookup only covers campaigns you own. All three return the same [Reward entitlement](#reward-entitlements) objects.
+Every lookup only covers campaigns you own, and return [Reward entitlement](#reward-entitlements) objects.
 
 ## Which pledges are returned
 
