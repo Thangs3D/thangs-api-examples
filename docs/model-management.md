@@ -32,7 +32,7 @@ Example success response:
 { "categories": ["3D Printing", "Art", "Design"] }
 ```
 
-A `GET` request to `/public/licenses` returns the licenses configured on your Thangs account. Each license's `id` is a valid value for a model's `license` field.
+A `GET` request to `/public/licenses` returns the licenses configured on your Thangs account. Each license's `id` is a valid value for a model's `license` field. To use a license of your own, [upload it](#licenses) first.
 
 |                    |                                                                             |
 | :----------------- | :-------------------------------------------------------------------------- |
@@ -465,9 +465,85 @@ Example success response:
 }
 ```
 
+## Licenses
+
+Besides the licenses already on your Thangs account, you can upload your own license file and apply it to your models. Adding a license takes the same two steps as a part: request a signed upload URL, upload the file, then add it by its `uploadUrl`.
+
+### Request upload URLs for licenses
+
+Make a `POST` request to `/public/licenses/upload-urls` describing each license file you are about to upload. A license file must be a PDF (`.pdf`), plain text (`.txt`) or Markdown (`.md`) file, and file names must be unique within the request, ignoring case.
+
+|                    |                                                                                                                                                                                                                                                                                                                             |
+| :----------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `POST /public/licenses/upload-urls`                                                                                                                                                                                                                                                                                         |
+| Request body       | A JSON object with a `files` array of 1 to 10 entries, each describing one file: `filename` (string, required), the original file name including its extension; `sizeBytes` (integer, minimum 1), the file's size in bytes.                                                                                                 |
+| Response (success) | `200 OK` with a JSON body containing a `grants` array, one entry per requested file in request order. Each entry has `uploadUrl`, `gcsPath`, `contentType` and `expiresAt` (all strings). `contentType` is `application/pdf`, `text/plain` or `text/markdown`, and must be sent as the `Content-Type` header of the upload. |
+| Response (error)   | `400 Bad Request` if the request body is invalid, if a file is not a `.pdf`, `.txt` or `.md` file, or if two files have the same name.                                                                                                                                                                                      |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                                                                                                                                                                                                               |
+| Response (error)   | `413 Payload Too Large` if any declared `sizeBytes` exceeds 50 MB.                                                                                                                                                                                                                                                          |
+
+Example request body:
+
+```json
+{
+  "files": [{ "filename": "my-license.pdf", "sizeBytes": 204800 }]
+}
+```
+
+Upload the file to the `uploadUrl` as described in [Uploading files to signed URLs](#uploading-files-to-signed-urls).
+
+### Add a license
+
+Once the file is uploaded, make a `POST` request to `/public/licenses` with the grant's `uploadUrl` as `uploadedFrom`. Each upload URL can be used for one license only.
+
+The response is a License object. Set its `id` as the `license` field when you [update a model](#update-an-existing-model) to apply the license to it. The new license also appears in `GET /public/licenses`.
+
+|                    |                                                                                                                                            |
+| :----------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `POST /public/licenses`                                                                                                                    |
+| Request body       | A JSON object with `uploadedFrom` (string, required): the `uploadUrl` of a license upload grant.                                           |
+| Response (success) | `201 Created` with a JSON body containing a License object.                                                                                |
+| Response (error)   | `400 Bad Request` if the URL is unknown or expired, is not a license upload, has already been used, or if the file was not uploaded to it. |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                                              |
+
+Example request body:
+
+```json
+{ "uploadedFrom": "https://storage.googleapis.com/...signed..." }
+```
+
+Example success response:
+
+```json
+{ "id": 42, "name": "my-license.pdf", "url": "..." }
+```
+
+### Delete a license
+
+Make a `DELETE` request to `/public/licenses/{licenseId}` to remove one of your licenses. You cannot delete a license that a model still uses: the `409` response lists those models in `modelIds`, so set another license, or `null`, as `license` on each of them first.
+
+|                    |                                                                                                                  |
+| :----------------- | :--------------------------------------------------------------------------------------------------------------- |
+| Endpoint           | `DELETE /public/licenses/{licenseId}`                                                                            |
+| Path parameters    | `licenseId` (number, required): the license's `id`.                                                              |
+| Request body       | None.                                                                                                            |
+| Response (success) | `204 No Content`.                                                                                                |
+| Response (error)   | `401 Unauthorized` if the API key is invalid.                                                                    |
+| Response (error)   | `404 Not Found` if the license does not exist or is not yours.                                                   |
+| Response (error)   | `409 Conflict` if a model uses the license. The body has `message` (string) and `modelIds` (array of model IDs). |
+
+Example conflict response:
+
+```json
+{
+  "message": "License 42 is used by 2 model(s). Remove it from them first.",
+  "modelIds": [101, 102]
+}
+```
+
 ## Uploading files to signed URLs
 
-The upload URLs returned for parts and attachments point at Google Cloud Storage (`storage.googleapis.com`). Your service is responsible for sending each file's bytes to its URL before the URL expires. Once the upload succeeds, pass the grant's `gcsPath` as `uploadedFrom` when you set the model's parts or attachments.
+The upload URLs returned for parts, attachments and licenses point at Google Cloud Storage (`storage.googleapis.com`). Your service is responsible for sending each file's bytes to its URL before the URL expires. Once the upload succeeds, pass the grant's `gcsPath` as `uploadedFrom` when you set the model's parts or attachments.
 
 ### Performing the upload
 
