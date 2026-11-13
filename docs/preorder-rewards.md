@@ -59,8 +59,8 @@ On a reward with a feature available on backing, a pledge whose charge is still 
 | Feature on backing, not charged yet        | `false`    | `false`     | `true`              |
 | Feature on backing, charged                | `true`     | `false`     | `true`              |
 | Feature on release, charged, not delivered | `true`     | `false`     | `false`             |
+| Feature on release, not charged, delivered | `false`    | `true`      | `false`             |
 | Delivered                                  | `true`     | `true`      | `true`              |
-| Feature on release, delivered, not charged | `false`    | `true`      | `false`             |
 
 Example Reward entitlement:
 
