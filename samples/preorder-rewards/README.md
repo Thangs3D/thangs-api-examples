@@ -2,7 +2,7 @@
 
 A small web app that unlocks a feature for users who backed a particular reward of your preorder campaign. It demonstrates [Preorder rewards](https://thangs3d.github.io/thangs-api-examples/preorder-rewards) in the guide.
 
-The feature unlocks when the user backed the reward set in `REWARD_ID` and one of its feature items is `available`. Depending on how you set up the feature, that is from backing or once Thangs delivers the reward; see [When to grant a feature](https://thangs3d.github.io/thangs-api-examples/preorder-rewards#when-to-grant-a-feature).
+The feature unlocks when the user backed the reward set in `REWARD_ID` and its feature item set in `FEATURE_ITEM_ID` is `available`. The item ID is the same for every backer, and across every reward that includes the item. Depending on how you set up the feature, that is from backing or once Thangs delivers the reward; see [When to grant a feature](https://thangs3d.github.io/thangs-api-examples/preorder-rewards#when-to-grant-a-feature).
 
 ## How it works
 
@@ -24,7 +24,7 @@ Requires Node.js 26 or later. Your API key needs Delegated auth access; see [Get
 cp .env.example .env
 ```
 
-Fill in `THANGS_API_KEY` and `REWARD_ID` in `.env`, then start the server. `THANGS_API_HOST` defaults to `https://production-api.thangs.com`.
+Fill in `THANGS_API_KEY`, `REWARD_ID` and `FEATURE_ITEM_ID` in `.env`, then start the server. `THANGS_API_HOST` defaults to `https://production-api.thangs.com`.
 
 ```bash
 npm start

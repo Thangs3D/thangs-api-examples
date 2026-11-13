@@ -15,10 +15,14 @@ const apiKey = process.env.THANGS_API_KEY;
 const apiHost =
   process.env.THANGS_API_HOST || "https://production-api.thangs.com";
 const rewardId = Number(process.env.REWARD_ID);
+const featureItemId = Number(process.env.FEATURE_ITEM_ID);
 const port = Number(process.env.PORT ?? 3000);
 
 if (!apiKey) throw new Error("Set THANGS_API_KEY in .env");
 if (!Number.isInteger(rewardId)) throw new Error("Set REWARD_ID in .env");
+if (!Number.isInteger(featureItemId)) {
+  throw new Error("Set FEATURE_ITEM_ID in .env");
+}
 
 const thangs = createThangsClient(apiKey, apiHost);
 
@@ -76,8 +80,8 @@ async function getRewards(
   return await thangs.getPreorderRewards(session.userToken);
 }
 
-// The feature unlocks when the user backed the reward and one of its feature
-// items is available now. A feature can be available from backing, before the
+// The feature unlocks when the user backed the reward and the reward's feature
+// item is available now. A feature can be available from backing, before the
 // payment is collected, or only once Thangs delivers the reward.
 function findUnlockingReward(
   rewards: RewardEntitlement[],
@@ -86,7 +90,10 @@ function findUnlockingReward(
     (reward) =>
       reward.rewardId === rewardId &&
       reward.rewardItems.some(
-        (item) => item.type === "feature" && item.available,
+        (item) =>
+          item.type === "feature" &&
+          item.id === featureItemId &&
+          item.available,
       ),
   );
 }
