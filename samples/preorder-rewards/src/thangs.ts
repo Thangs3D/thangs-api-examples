@@ -1,8 +1,6 @@
 // A minimal client for the Thangs API endpoints this sample uses.
 // Every call sends the API key, so this module must only run on the server.
 
-const API_HOST = "https://production-api.thangs.com";
-
 export class ThangsApiError extends Error {
   readonly status: number;
 
@@ -39,7 +37,7 @@ export interface RewardEntitlement {
   delivered: boolean;
 }
 
-export function createThangsClient(apiKey: string) {
+export function createThangsClient(apiKey: string, apiHost: string) {
   async function request<T>(
     method: string,
     path: string,
@@ -51,7 +49,7 @@ export function createThangsClient(apiKey: string) {
     };
     if (userToken) headers["x-thangs-user-token"] = userToken;
 
-    const response = await fetch(`${API_HOST}${path}`, { method, headers });
+    const response = await fetch(`${apiHost}${path}`, { method, headers });
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as {
         message?: string;

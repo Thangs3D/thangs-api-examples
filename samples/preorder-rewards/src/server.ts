@@ -12,13 +12,15 @@ import {
 } from "./thangs.ts";
 
 const apiKey = process.env.THANGS_API_KEY;
+const apiHost =
+  process.env.THANGS_API_HOST || "https://production-api.thangs.com";
 const rewardId = Number(process.env.REWARD_ID);
 const port = Number(process.env.PORT ?? 3000);
 
 if (!apiKey) throw new Error("Set THANGS_API_KEY in .env");
 if (!Number.isInteger(rewardId)) throw new Error("Set REWARD_ID in .env");
 
-const thangs = createThangsClient(apiKey);
+const thangs = createThangsClient(apiKey, apiHost);
 
 // What the sample remembers about each visitor. A real application would
 // store this with its own user record, in a database.

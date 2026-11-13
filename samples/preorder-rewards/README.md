@@ -24,7 +24,7 @@ Requires Node.js 26 or later. Your API key needs Delegated auth access; see [Get
 cp .env.example .env
 ```
 
-Fill in `THANGS_API_KEY` and `REWARD_ID` in `.env`, then start the server:
+Fill in `THANGS_API_KEY` and `REWARD_ID` in `.env`, then start the server. `THANGS_API_HOST` defaults to `https://production-api.thangs.com`.
 
 ```bash
 npm start
