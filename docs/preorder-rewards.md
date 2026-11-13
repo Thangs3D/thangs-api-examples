@@ -48,15 +48,18 @@ A reward lists all its items, not only features. Thangs delivers every item exce
 Use `available` to decide whether to grant a feature. It is `true` in two cases:
 
 - The feature is available on backing. It is `true` from the moment the user backs the reward, whether or not the payment has been collected yet.
-- The reward is delivered (`delivered: true`). Every item of a delivered reward is available.
+- The reward is delivered (`delivered: true`) and the payment was collected (`captured: true`). Every item of such a reward is available.
 
 Otherwise the feature is available on release: the user has paid, but you should not grant it until Thangs delivers the reward.
+
+On a reward with a feature available on backing, a pledge whose charge is still being retried keeps `captured: false` after the reward is delivered, so its features on release stay unavailable until the payment goes through.
 
 | Situation                                  | `captured` | `delivered` | Feature `available` |
 | :----------------------------------------- | :--------- | :---------- | :------------------ |
 | Feature on backing, not charged yet        | `false`    | `false`     | `true`              |
 | Feature on backing, charged                | `true`     | `false`     | `true`              |
 | Feature on release, charged, not delivered | `true`     | `false`     | `false`             |
+| Feature on release, not charged, delivered | `false`    | `true`      | `false`             |
 | Delivered                                  | `true`     | `true`      | `true`              |
 
 Example Reward entitlement:
