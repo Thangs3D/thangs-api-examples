@@ -11,10 +11,10 @@ Every lookup only covers campaigns you own, and return [Reward entitlement](#rew
 
 ## Which pledges are returned
 
-A reward is returned only if it includes at least one feature item, and only for these pledges:
+A reward is returned only if it includes at least one feature item. It is returned from the moment the user backs it, for these pledges:
 
 - A pledge whose payment was collected. It has `captured: true`.
-- A pledge that has not been charged yet, if the reward has a feature you make available on backing. It has `captured: false`. This covers pledges whose charge failed or needs the backer to act, while the backer still has a chance to pay.
+- A pledge that has not been charged yet. It has `captured: false`. This covers pledges whose charge failed or needs the backer to act, while the backer still has a chance to pay.
 
 Pledges that are cancelled or expired are never returned. When a campaign closes without being funded, a backer cancels, or a pledge is cancelled because the payment never went through, the reward stops appearing on the next lookup. To revoke access, check the user again; Thangs does not notify you.
 
@@ -29,38 +29,34 @@ Each Reward entitlement object has these fields:
 | `rewardId`      | number  | The ID of the reward the user backed.                                                                          |
 | `rewardName`    | string  | The name of the reward.                                                                                        |
 | `rewardItems`   | array   | The items the reward includes, as Reward item objects, in the order they were added to the campaign.           |
-| `captured`      | boolean | Whether the payment was collected. `false` only for a reward with a feature available on backing (see above).  |
+| `captured`      | boolean | Whether the payment was collected.                                                                             |
 | `delivered`     | boolean | Whether Thangs has delivered the reward to its backers. It becomes `true` once, for all backers of the reward. |
 
 Each Reward item object has these fields:
 
-| Field       | Type    | Description                                                                                       |
-| :---------- | :------ | :------------------------------------------------------------------------------------------------ |
-| `type`      | string  | The item type: `"model"`, `"collection"`, `"print_sku"`, `"membership"` or `"feature"`.           |
-| `id`        | number  | The campaign item's ID. It stays the same across users, so use it to map an item to your feature. |
-| `label`     | string  | The item's label, as shown on the campaign.                                                       |
-| `available` | boolean | Whether the backer should have this item now.                                                     |
+| Field   | Type   | Description                                                                                       |
+| :------ | :----- | :------------------------------------------------------------------------------------------------ |
+| `type`  | string | The item type: `"model"`, `"collection"`, `"print_sku"`, `"membership"` or `"feature"`.           |
+| `id`    | number | The campaign item's ID. It stays the same across users, so use it to map an item to your feature. |
+| `label` | string | The item's label, as shown on the campaign.                                                       |
 
 A reward lists all its items, not only features. Thangs delivers every item except features. You only need to act on items with `type: "feature"`.
 
 ### When to grant a feature
 
-Use `available` to decide whether to grant a feature. It is `true` in two cases:
+You decide when a backer gets your feature:
 
-- The feature is available on backing. It is `true` from the moment the user backs the reward, whether or not the payment has been collected yet.
-- The reward is delivered (`delivered: true`) and the payment was collected (`captured: true`). Every item of such a reward is available.
+- **On backing.** Grant the feature as soon as the reward is returned. The backer keeps it while the pledge stands, paid or not. If the pledge is cancelled, or the campaign closes without being funded, the reward stops being returned.
+- **On release.** Grant the feature only once the campaign is funded and the backer has paid, and Thangs has delivered the reward: `captured: true` and `delivered: true`.
 
-Otherwise the feature is available on release: the user has paid, but you should not grant it until Thangs delivers the reward.
+A pledge whose charge is still being retried keeps `captured: false`, also after the reward is delivered. If you grant on release, wait until the payment goes through.
 
-On a reward with a feature available on backing, a pledge whose charge is still being retried keeps `captured: false` after the reward is delivered, so its features on release stay unavailable until the payment goes through.
-
-| Situation                                  | `captured` | `delivered` | Feature `available` |
-| :----------------------------------------- | :--------- | :---------- | :------------------ |
-| Feature on backing, not charged yet        | `false`    | `false`     | `true`              |
-| Feature on backing, charged                | `true`     | `false`     | `true`              |
-| Feature on release, charged, not delivered | `true`     | `false`     | `false`             |
-| Feature on release, not charged, delivered | `false`    | `true`      | `false`             |
-| Delivered                                  | `true`     | `true`      | `true`              |
+| Situation                       | `captured` | `delivered` | Grant on backing | Grant on release |
+| :------------------------------ | :--------- | :---------- | :--------------- | :--------------- |
+| Backed, not charged yet         | `false`    | `false`     | Yes              | No               |
+| Charged, not delivered          | `true`     | `false`     | Yes              | No               |
+| Delivered, charge being retried | `false`    | `true`      | Yes              | No               |
+| Charged and delivered           | `true`     | `true`      | Yes              | Yes              |
 
 Example Reward entitlement:
 
@@ -74,20 +70,17 @@ Example Reward entitlement:
     {
       "type": "collection",
       "id": 9901,
-      "label": "Dragon Keep STLs",
-      "available": false
+      "label": "Dragon Keep STLs"
     },
     {
       "type": "feature",
       "id": 9902,
-      "label": "Discord backer role",
-      "available": true
+      "label": "Discord backer role"
     },
     {
       "type": "feature",
       "id": 9903,
-      "label": "Name in the credits",
-      "available": false
+      "label": "Name in the credits"
     }
   ],
   "captured": true,
@@ -122,8 +115,7 @@ Example success response:
         {
           "type": "feature",
           "id": 9902,
-          "label": "Discord backer role",
-          "available": true
+          "label": "Discord backer role"
         }
       ],
       "captured": true,
@@ -164,8 +156,7 @@ Example success response:
         {
           "type": "feature",
           "id": 9902,
-          "label": "Discord backer role",
-          "available": true
+          "label": "Discord backer role"
         }
       ],
       "captured": true,

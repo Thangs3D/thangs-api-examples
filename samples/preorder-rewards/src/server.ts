@@ -16,12 +16,16 @@ const apiHost =
   process.env.THANGS_API_HOST || "https://production-api.thangs.com";
 const rewardId = Number(process.env.REWARD_ID);
 const featureItemId = Number(process.env.FEATURE_ITEM_ID);
+const unlockWhen = process.env.UNLOCK_WHEN || "backing";
 const port = Number(process.env.PORT ?? 3000);
 
 if (!apiKey) throw new Error("Set THANGS_API_KEY in .env");
 if (!Number.isInteger(rewardId)) throw new Error("Set REWARD_ID in .env");
 if (!Number.isInteger(featureItemId)) {
   throw new Error("Set FEATURE_ITEM_ID in .env");
+}
+if (unlockWhen !== "backing" && unlockWhen !== "release") {
+  throw new Error('Set UNLOCK_WHEN in .env to "backing" or "release"');
 }
 
 const thangs = createThangsClient(apiKey, apiHost);
@@ -80,22 +84,25 @@ async function getRewards(
   return await thangs.getPreorderRewards(session.userToken);
 }
 
-// The feature unlocks when the user backed the reward and the reward's feature
-// item is available now. A feature can be available from backing, before the
-// payment is collected, or only once Thangs delivers the reward.
-function findUnlockingReward(
+// The user backed the reward, and the reward includes the feature item.
+function findBackedReward(
   rewards: RewardEntitlement[],
 ): RewardEntitlement | undefined {
   return rewards.find(
     (reward) =>
       reward.rewardId === rewardId &&
       reward.rewardItems.some(
-        (item) =>
-          item.type === "feature" &&
-          item.id === featureItemId &&
-          item.available,
+        (item) => item.type === "feature" && item.id === featureItemId,
       ),
   );
+}
+
+// With UNLOCK_WHEN=backing, the feature unlocks as soon as the user backs the
+// reward. With UNLOCK_WHEN=release, it unlocks once the campaign is funded and
+// the user has paid (`captured`) and Thangs has delivered the reward
+// (`delivered`).
+function isUnlocked(reward: RewardEntitlement): boolean {
+  return unlockWhen === "backing" || (reward.captured && reward.delivered);
 }
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
@@ -144,9 +151,10 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
         sendJson(res, 401, { message: "Connect your Thangs account first" });
         return;
       }
-      const reward = findUnlockingReward(rewards);
+      const reward = findBackedReward(rewards);
       sendJson(res, 200, {
-        unlocked: Boolean(reward),
+        backed: Boolean(reward),
+        unlocked: Boolean(reward && isUnlocked(reward)),
         reward: reward && {
           campaignTitle: reward.campaignTitle,
           rewardName: reward.rewardName,
