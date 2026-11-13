@@ -8,4 +8,6 @@ Each sample is a standalone project in its own directory, with:
 
 Keep your API key on the server. Browser code should call only the sample's own backend, never the Thangs API directly.
 
-Samples are coming soon.
+| Sample                                 | Guide section                                   |
+| :------------------------------------- | :---------------------------------------------- |
+| [`preorder-rewards`](preorder-rewards) | [Preorder rewards](../docs/preorder-rewards.md) |

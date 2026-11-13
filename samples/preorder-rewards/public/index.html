@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preorder rewards sample</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 32rem;
+        margin: 3rem auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+      }
+      .panel {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+      }
+      .unlocked {
+        border-color: #2a8a4a;
+        background: #eefaf1;
+      }
+      button {
+        font: inherit;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+      [hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Backer feature</h1>
+    <p id="status">Checking…</p>
+
+    <div id="connect" hidden>
+      <button id="connect-button">Connect your Thangs account</button>
+    </div>
+
+    <div id="locked" class="panel" hidden>
+      <strong>Locked.</strong> Back the reward on Thangs to unlock this feature.
+      If you just backed it, check again once your payment has been collected.
+      <p><button id="refresh-button">Check again</button></p>
+    </div>
+
+    <div id="unlocked" class="panel unlocked" hidden>
+      <strong>Unlocked!</strong> Thanks for backing
+      <span id="reward-name"></span>.
+    </div>
+
+    <p id="disconnect" hidden>
+      <button id="disconnect-button">Disconnect</button>
+    </p>
+
+    <script type="module">
+      // This page only talks to the sample's own server, never to Thangs.
+      const $ = (id) => document.getElementById(id);
+      const show = (...ids) => {
+        for (const id of ["connect", "locked", "unlocked", "disconnect"]) {
+          $(id).hidden = !ids.includes(id);
+        }
+      };
+
+      async function api(method, path) {
+        const response = await fetch(path, { method });
+        return { status: response.status, body: await response.json() };
+      }
+
+      async function loadFeature() {
+        $("status").textContent = "Checking your rewards…";
+        const { status, body } = await api("GET", "/api/feature");
+        if (status === 401) {
+          $("status").textContent = "Connect your Thangs account to continue.";
+          show("connect");
+        } else if (status !== 200) {
+          $("status").textContent = body.message;
+        } else if (body.unlocked) {
+          $("status").textContent = "";
+          $("reward-name").textContent =
+            `${body.reward.rewardName} on ${body.reward.campaignTitle}`;
+          show("unlocked", "disconnect");
+        } else {
+          $("status").textContent = "";
+          show("locked", "disconnect");
+        }
+      }
+
+      let attempt = 0;
+
+      async function connect() {
+        const thisAttempt = ++attempt;
+        // Open the popup straight away, so the browser does not block it.
+        const popup = window.open("", "thangs-auth", "width=500,height=700");
+        const { body } = await api("POST", "/api/auth/start");
+        if (!body.authenticateUrl) {
+          popup?.close();
+          $("status").textContent = body.message;
+          return;
+        }
+        if (popup) popup.location.href = body.authenticateUrl;
+        else window.open(body.authenticateUrl, "thangs-auth");
+        $("status").textContent = "Waiting for you to allow access on Thangs…";
+
+        // Poll until the user clicks Allow, for up to five minutes.
+        for (let i = 0; i < 150; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          if (thisAttempt !== attempt) return; // A newer attempt took over.
+          const { body } = await api("GET", "/api/auth/status");
+          if (body.authorized) return loadFeature();
+        }
+        $("status").textContent = "Authorization timed out. Try again.";
+      }
+
+      async function disconnect() {
+        await api("POST", "/api/auth/disconnect");
+        loadFeature();
+      }
+
+      $("connect-button").addEventListener("click", connect);
+      $("refresh-button").addEventListener("click", loadFeature);
+      $("disconnect-button").addEventListener("click", disconnect);
+      loadFeature();
+    </script>
+  </body>
+</html>
