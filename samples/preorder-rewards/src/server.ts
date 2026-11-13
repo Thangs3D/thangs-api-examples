@@ -76,12 +76,18 @@ async function getRewards(
   return await thangs.getPreorderRewards(session.userToken);
 }
 
-// The feature unlocks when the user has a captured pledge on the reward.
+// The feature unlocks when the user backed the reward and one of its feature
+// items is available now. A feature can be available from backing, before the
+// payment is collected, or only once Thangs delivers the reward.
 function findUnlockingReward(
   rewards: RewardEntitlement[],
 ): RewardEntitlement | undefined {
   return rewards.find(
-    (reward) => reward.rewardId === rewardId && reward.captured,
+    (reward) =>
+      reward.rewardId === rewardId &&
+      reward.rewardItems.some(
+        (item) => item.type === "feature" && item.available,
+      ),
   );
 }
 

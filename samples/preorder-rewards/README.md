@@ -2,7 +2,7 @@
 
 A small web app that unlocks a feature for users who backed a particular reward of your preorder campaign. It demonstrates [Preorder rewards](https://thangs3d.github.io/thangs-api-examples/preorder-rewards) in the guide.
 
-The feature unlocks when the user has a pledge on the reward set in `REWARD_ID` and its payment has been collected (`captured: true`).
+The feature unlocks when the user backed the reward set in `REWARD_ID` and one of its feature items is `available`. Depending on how you set up the feature, that is from backing or once Thangs delivers the reward; see [When to grant a feature](https://thangs3d.github.io/thangs-api-examples/preorder-rewards#when-to-grant-a-feature).
 
 ## How it works
 
