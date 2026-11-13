@@ -41,9 +41,7 @@
     </div>
 
     <div id="locked" class="panel" hidden>
-      <strong>Locked.</strong> Back the reward on Thangs to unlock this feature.
-      If you already backed it, the feature unlocks once the reward is
-      delivered.
+      <strong>Locked.</strong> <span id="locked-reason"></span>
       <p><button id="refresh-button">Check again</button></p>
     </div>
 
@@ -85,6 +83,9 @@
           show("unlocked", "disconnect");
         } else {
           $("status").textContent = "";
+          $("locked-reason").textContent = body.backed
+            ? "Thanks for backing! This feature unlocks once the campaign is funded and the reward is delivered."
+            : "Back the reward on Thangs to unlock this feature.";
           show("locked", "disconnect");
         }
       }

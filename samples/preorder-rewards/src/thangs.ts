@@ -24,7 +24,6 @@ export interface RewardItem {
   type: "model" | "collection" | "print_sku" | "membership" | "feature";
   id: number;
   label: string;
-  available: boolean;
 }
 
 export interface RewardEntitlement {
